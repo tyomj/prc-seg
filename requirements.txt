@@ -1,0 +1,12 @@
+albumentations>=0.5.2
+easydict>=1.9
+gdown
+hydra-core>=1.0.5
+omegaconf>=2.0.6
+opencv-python>=4.5.1.48
+pandas>=1.2.1
+pre-commit
+pytorch-lightning>=1.1.6
+segmentation_models_pytorch
+torch>=1.7.1
+torchvision>=0.8.2

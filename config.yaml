@@ -1,0 +1,116 @@
+augmentation:
+  train:
+    augs:
+    - class_name: albumentations.Resize
+      params:
+        height: 128
+        width: 224
+        p: 1.0
+    - class_name: albumentations.Normalize
+      params:
+        p: 1.0
+    - class_name: albumentations.pytorch.transforms.ToTensor
+      params:
+        normalize: null
+  valid:
+    augs:
+    - class_name: albumentations.Resize
+      params:
+        height: 128
+        width: 224
+        p: 1.0
+    - class_name: albumentations.Normalize
+      params:
+        p: 1.0
+    - class_name: albumentations.pytorch.transforms.ToTensor
+      params:
+        normalize: null
+callbacks:
+  early_stopping:
+    class_name: pl.callbacks.EarlyStopping
+    params:
+      mode: max
+      monitor: ${training.metric}
+      patience: 10
+  model_checkpoint:
+    class_name: pl.callbacks.ModelCheckpoint
+    params:
+      dirpath: saved_models/
+      mode: max
+      monitor: ${training.metric}
+      save_top_k: 3
+
+data:
+  root: akozlov/projects/retvis/data/segmentation_n_ocr
+  train_dir: segmentation/train
+  test_dir: segmentation/val
+  csv_file: dataset.csv
+  train_dl:
+    batch_size: 128
+    num_workers: 8
+    shuffle: True
+  valid_dl:
+    batch_size: 128
+    num_workers: 8
+    shuffle: False
+
+general:
+  project_name: prc-seg
+  run_name: test_run
+  save_dir: logs/
+
+logging:
+  log: true
+  loggers:
+    tb_logger:
+      class_name: pytorch_lightning.loggers.TensorBoardLogger
+      params:
+        save_dir: ${general.save_dir}
+
+model:
+  class_name: segmentation_models_pytorch.Unet
+  params:
+    encoder_name: resnet50
+    encoder_weights: imagenet
+    classes: 1
+    activation: sigmoid
+
+losses:
+  dice:
+    class_name: segmentation_models_pytorch.utils.losses.DiceLoss
+
+metrics:
+  iou:
+    class_name: segmentation_models_pytorch.utils.metrics.IoU
+
+optimizer:
+  class_name: torch.optim.Adam
+  params:
+    lr: ${training.lr}
+    weight_decay: 0.00001
+
+scheduler:
+  class_name: torch.optim.lr_scheduler.ReduceLROnPlateau
+  monitor: train_loss_epoch
+  params:
+    factor: 0.1
+    mode: max
+    patience: 3
+  step: epoch
+
+trainer:
+  accumulate_grad_batches: 1
+  distributed_backend: dp
+  gpus: 2
+  gradient_clip_val: 0.5
+  max_epochs: 100
+  num_sanity_val_steps: 0
+  profiler: false
+  weights_summary: null
+  # val_check_interval: 0.05
+  # overfit_batches: 10
+
+training:
+  lr: 0.001
+  metric: val_iou
+  seed: 42
